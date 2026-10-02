@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Asistente</title>
+<style>
+  :root {
+    --bg: #0f0f10;
+    --card: #1b1c1e;
+    --accent: #e5484d;
+    --text: #ececec;
+    --muted: #9ca3af;
+    --green: #30c48d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+  header {
+    padding: 24px 18px 12px;
+  }
+  header h1 { font-size: 26px; font-size: 26px; }
+  .card {
+    background: var(--card);
+    margin: 12px 16px;
+    border-radius: 18px;
+    padding: 16px;
+  }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); }
+  .dot.warn { background: #f7b500; }
+  .muted { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .badge { background: #2a2b2e; border-radius: 10px; padding: 2px 10px; font-size: 12px; color: var(--muted); }
+  .chip { padding: 6px 14px; border-radius: 12px; background: #26272b; display: inline-block; margin: 6px 6px 0 0; font-size: 13px; }
+  button.primary {
+    background: var(--accent); color: white; border: none; border-radius: 12px;
+    padding: 12px 20px; font-size: 15px; margin-top: 14px; width: 100%;
+  }
+  button.secondary {
+    background: #26272b; color: var(--text); border: none; border-radius: 12px;
+    padding: 12px; font-size: 14px; width: 100%; margin-top: 10px;
+  }
+  nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #151517; display: flex; padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid #2a2b2e;
+  }
+  nav button {
+    flex: 1; background: none; border: none; color: var(--muted);
+    font-size: 11px; padding: 4px 0;
+  }
+  nav button.active { color: var(--accent); }
+  .section { display: none; }
+  .section.active { display: block; }
+  .perm { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #2a2b2e; }
+  .perm:last-child { border-bottom: 0; }
+  .perm button { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; }
+  .perm button.done { background: #26272b; color: var(--green); }
+  #perms .perm .label { font-size: 15px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Asistente</h1>
+  <div class="muted" id="status">Cargando…</div>
+</header>
+
+<div id="inicio" class="section active">
+  <div class="card">
+    <div class="row">
+      <div class="dot" id="modelDot"></div>
+      <div>
+        <div id="modelName" style="font-weight:bold">Modelo local</div>
+        <div class="muted" id="modelDetail">Inicializando…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:bold; margin-bottom: 4px">Batería</div>
+    <h2 style="font-size:32px" id="batt">--%</h2>
+    <div class="muted" id="battInfo">--</div>
+  </div>
+
+  <div class="card" id="perms">
+    <div style="font-weight:bold; margin-bottom: 4px">Permisos del sistema</div>
+    <div class="muted">Toca Activar para otorgar cada uno.</div>
+    <div class="perm"><span class="label">Notificaciones</span><button onclick="permN()">Activar</button></div>
+    <div class="perm"><span class="label">Accesibilidad</span><button onclick="permA11y()">Activar</button></div>
+    <div class="perm"><span class="label">Avisos</span><button onclick="permPosts()">Activar</button></div>
+    <div class="perm"><span class="label">Contactos</span><button onclick="permContacts()">Activar</button></div>
+    <div class="perm"><span class="label">Micrófono</span><button onclick="permMic()">Activar</button></div>
+  </div>
+</div>
+
+<div id="modelos" class="section">
+  <div class="card">
+    <div style="font-weight:bold">Padre actual</div>
+    <h3 id="currentModel" style="margin-top:4px">--</h3>
+    <button class="secondary" onclick="rulesOnly()">Usar solo reglas</button>
+  </div>
+  <div class="card">
+    <div style="font-weight:bold; margin-bottom: 6px">Descargar modelo</div>
+    <div id="dl" class="muted">No hay descarga.</div>
+  </div>
+</div>
+
+<nav>
+  <button class="active" id="tab0" onclick="tab(0)">Inicio</button>
+  <button id="tab1" onclick="tab(1)">Modelos</button>
+</nav>
+
+<script>
+  function post(msg) {
+    try { Asistente.postMessage(JSON.stringify(msg)); } catch (e) {}
+  }
+  function tab(i) {
+    document.getElementById('inicio').className = i === 0 ? 'section active' : 'section';
+    document.getElementById('modelos').className = i === 1 ? 'section active' : 'section';
+    document.getElementById('tab0').className = i === 0 ? 'active' : '';
+    document.getElementById('tab1').className = i === 1 ? 'active' : '';
+  }
+  function permN() { post({a:'notifAccess'}) }
+  function permA11y() { post({a:'accessibility'}) }
+  function permPosts() { post({a:'postNotif'}) }
+  function permContacts() { post({a:'contacts'}) }
+  function permMic() { post({a:'mic'}) }
+  function rulesOnly() { post({a:'rulesOnly'}) }
+
+  function flutterUpdate(s) {
+    try {
+      document.getElementById('status').innerText = s.status || '';
+      document.getElementById('modelName').innerText = s.model || 'sin modelo';
+      document.getElementById('modelDetail').innerText = s.modelDetail || '—';
+      document.getElementById('batt').innerText = (s.batt !== undefined ? s.batt + '%' : '--%');
+      document.getElementById('battInfo').innerText = s.battInfo || '';
+      document.getElementById('currentModel').innerText = s.model || '—';
+      document.getElementById('dl').innerText = s.download || 'No hay descarga.';
+    } catch (e) {}
+  }
+</script>
+
+</body>
+</html>
