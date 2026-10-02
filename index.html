@@ -91,22 +91,26 @@
   <div class="card" id="perms">
     <div style="font-weight:bold; margin-bottom: 4px">Permisos del sistema</div>
     <div class="muted">Toca Activar para otorgar cada uno.</div>
-    <div class="perm"><span class="label">Notificaciones</span><button onclick="permN()">Activar</button></div>
-    <div class="perm"><span class="label">Accesibilidad</span><button onclick="permA11y()">Activar</button></div>
-    <div class="perm"><span class="label">Avisos</span><button onclick="permPosts()">Activar</button></div>
-    <div class="perm"><span class="label">Contactos</span><button onclick="permContacts()">Activar</button></div>
-    <div class="perm"><span class="label">Micrófono</span><button onclick="permMic()">Activar</button></div>
+    <div class="perm"><span class="label">Notificaciones</span><button id="btnNotif" onclick="permN()">Activar</button></div>
+    <div class="perm"><span class="label">Accesibilidad</span><button id="btnA11y" onclick="permA11y()">Activar</button></div>
+    <div class="perm"><span class="label">Avisos</span><button id="btnPosts" onclick="permPosts()">Activar</button></div>
+    <div class="perm"><span class="label">Contactos</span><button id="btnContacts" onclick="permContacts()">Activar</button></div>
+    <div class="perm"><span class="label">Micrófono</span><button id="btnMic" onclick="permMic()">Activar</button></div>
   </div>
 </div>
 
 <div id="modelos" class="section">
   <div class="card">
-    <div style="font-weight:bold">Padre actual</div>
+    <div style="font-weight:bold">Modelo de hoy</div>
     <h3 id="currentModel" style="margin-top:4px">--</h3>
     <button class="secondary" onclick="rulesOnly()">Usar solo reglas</button>
   </div>
   <div class="card">
     <div style="font-weight:bold; margin-bottom: 6px">Descargar modelo</div>
+    <div class="perm">
+      <span class="label">Qwen2.5 0.5B <span class="badge" style="margin-left:6px">Recomendado</span></span>
+      <button id="btnDlQwen" onclick="dlQwen()">Descargar</button>
+    </div>
     <div id="dl" class="muted">No hay descarga.</div>
   </div>
 </div>
@@ -132,6 +136,15 @@
   function permContacts() { post({a:'contacts'}) }
   function permMic() { post({a:'mic'}) }
   function rulesOnly() { post({a:'rulesOnly'}) }
+  function dlQwen() { post({a:'downloadModel', id:'qwen25-0.5b'}) }
+
+  function setPermBtn(id, active) {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.innerText = active ? 'Activo' : 'Activar';
+    b.className = active ? 'done' : '';
+    b.disabled = !!active;
+  }
 
   function flutterUpdate(s) {
     try {
@@ -141,7 +154,15 @@
       document.getElementById('batt').innerText = (s.batt !== undefined ? s.batt + '%' : '--%');
       document.getElementById('battInfo').innerText = s.battInfo || '';
       document.getElementById('currentModel').innerText = s.model || '—';
-      document.getElementById('dl').innerText = s.download || 'No hay descarga.';
+      const d = s.download || '';
+      document.getElementById('dl').innerText = d === '' ? 'No hay descarga.' : d;
+      document.getElementById('btnDlQwen').disabled = d !== '';
+      const ps = s.perms || {};
+      setPermBtn('btnNotif', ps.notifications);
+      setPermBtn('btnA11y', ps.accessibility);
+      setPermBtn('btnPosts', ps.post);
+      setPermBtn('btnContacts', ps.contacts);
+      setPermBtn('btnMic', ps.mic);
     } catch (e) {}
   }
 </script>
